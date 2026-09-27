@@ -1,7 +1,7 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
-import { FaCheck } from "react-icons/fa6";
+import { useId, useOptimistic, useState, useTransition } from "react";
+import { FaCheck, FaCircleInfo } from "react-icons/fa6";
 import { setTaskDone, type TaskKind } from "@/app/actions/tasks";
 
 type Props = {
@@ -23,6 +23,9 @@ export default function TaskCard({
 }: Props) {
   const [optimisticDone, setOptimisticDone] = useOptimistic(done);
   const [, startTransition] = useTransition();
+  // Phones only: the description is tucked behind an info button.
+  const [showInfo, setShowInfo] = useState(false);
+  const descriptionId = useId();
 
   function toggle() {
     const next = !optimisticDone;
@@ -43,12 +46,31 @@ export default function TaskCard({
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <h2
-            className={`text-lg font-semibold ${optimisticDone ? "text-muted line-through" : ""}`}
+          <div className="flex items-center gap-1.5">
+            <h2
+              className={`text-lg font-semibold ${optimisticDone ? "text-muted line-through" : ""}`}
+            >
+              {title}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowInfo((v) => !v)}
+              aria-expanded={showInfo}
+              aria-controls={descriptionId}
+              aria-label={`${showInfo ? "Hide" : "Show"} details for ${title}`}
+              className={`rounded-full p-1 transition-colors sm:hidden ${
+                showInfo ? "text-accent" : "text-muted hover:text-foreground"
+              }`}
+            >
+              <FaCircleInfo />
+            </button>
+          </div>
+          <p
+            id={descriptionId}
+            className={`text-sm text-muted sm:block ${showInfo ? "block" : "hidden"}`}
           >
-            {title}
-          </h2>
-          <p className="text-sm text-muted">{description}</p>
+            {description}
+          </p>
         </div>
         <button
           type="button"
