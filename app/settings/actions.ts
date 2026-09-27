@@ -46,3 +46,16 @@ export async function saveSettings(
   revalidatePath("/", "layout");
   return { saved: true };
 }
+
+// One-tap fix when the saved timezone doesn't match the device's.
+export async function setTimezone(timezone: string) {
+  if (!isValidTimezone(timezone)) return { error: "Unknown timezone." };
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from("user_settings")
+    .update({ timezone, updated_at: new Date().toISOString() })
+    .eq("user_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return {};
+}

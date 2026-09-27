@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import type { ExtraVideo } from "@/app/actions/tasks";
 import HomeVideos from "@/app/components/HomeVideos";
 import TaskCard from "@/app/components/TaskCard";
+import TimezoneNotice from "@/app/components/TimezoneNotice";
 import { getSettings } from "@/lib/supabase/server";
 import { computeStats } from "@/lib/stats";
 import { todayIn } from "@/lib/today";
@@ -50,6 +51,9 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <div className="mb-6 empty:hidden">
+        <TimezoneNotice saved={settings.timezone} />
+      </div>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted">{dateLabel}</p>

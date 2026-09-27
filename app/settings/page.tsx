@@ -4,6 +4,7 @@ import { signOut } from "@/app/login/actions";
 import { getSettings } from "@/lib/supabase/server";
 import { computeStats, formatHours } from "@/lib/stats";
 import { todayIn } from "@/lib/today";
+import TimezoneNotice from "@/app/components/TimezoneNotice";
 import SettingsForm from "./SettingsForm";
 import InstallApp from "./InstallApp";
 import ReminderSettings from "./ReminderSettings";
@@ -46,6 +47,7 @@ export default async function SettingsPage() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+      <TimezoneNotice saved={settings.timezone} />
 
       <section className="card">
         <h2 className="mb-4 text-lg font-semibold">All-time study</h2>
