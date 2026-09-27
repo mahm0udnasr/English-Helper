@@ -10,7 +10,10 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f5f6fa",
+    // Splash screen color. The manifest allows only one, so use the brand
+    // indigo: it suits both light and dark mode (a light gray flashes white
+    // for dark-mode users).
+    background_color: "#4f46e5",
     theme_color: "#4f46e5",
     categories: ["education", "productivity"],
     icons: [
