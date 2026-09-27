@@ -5,19 +5,28 @@ import { getSettings } from "@/lib/supabase/server";
 import { computeStats, formatHours } from "@/lib/stats";
 import { todayIn } from "@/lib/today";
 import SettingsForm from "./SettingsForm";
+import InstallApp from "./InstallApp";
+import ReminderSettings from "./ReminderSettings";
+import { getVapidPublicKey } from "./reminders";
 import ThemeSwitch from "./ThemeSwitch";
 
 export const metadata: Metadata = { title: "Settings · English Helper" };
 
 export default async function SettingsPage() {
   const { supabase, user, settings } = await getSettings();
-  const [{ data: tasks }, { data: extras }] = await Promise.all([
-    supabase
-      .from("daily_tasks")
-      .select("day, kind, minutes")
-      .eq("user_id", user.id),
-    supabase.from("extra_study").select("kind, minutes").eq("user_id", user.id),
-  ]);
+  const [{ data: tasks }, { data: extras }, vapidPublicKey] = await Promise.all(
+    [
+      supabase
+        .from("daily_tasks")
+        .select("day, kind, minutes")
+        .eq("user_id", user.id),
+      supabase
+        .from("extra_study")
+        .select("kind, minutes")
+        .eq("user_id", user.id),
+      getVapidPublicKey(),
+    ],
+  );
 
   const { activeMin, passiveMin, ankiDays, streak, perfectDays } = computeStats(
     tasks ?? [],
@@ -57,6 +66,19 @@ export default async function SettingsPage() {
         <SettingsForm settings={settings} />
       </section>
 
+      <section className="card">
+        <h2 className="text-lg font-semibold">Daily reminder</h2>
+        <p className="mb-4 text-sm text-muted">
+          Get a notification at this time if today&apos;s tasks aren&apos;t done
+          yet, even when the app is closed. Turn it on for each phone or
+          computer you use.
+        </p>
+        <ReminderSettings
+          reminderTime={settings.reminder_time}
+          vapidPublicKey={vapidPublicKey}
+        />
+      </section>
+
       <section className="card flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">Appearance</h2>
@@ -65,6 +87,16 @@ export default async function SettingsPage() {
           </p>
         </div>
         <ThemeSwitch />
+      </section>
+
+      <section className="card flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Install app</h2>
+          <p className="text-sm text-muted">
+            Add English Helper to your home screen or desktop.
+          </p>
+        </div>
+        <InstallApp />
       </section>
 
       <section className="card flex flex-wrap items-center justify-between gap-4">

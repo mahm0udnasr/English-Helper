@@ -100,12 +100,41 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           active_goal_min: number
           display_name: string | null
           passive_goal_min: number
+          last_reminded_on: string | null
           leaderboard_anonymous: boolean
+          reminder_time: string
           timezone: string
           updated_at: string
           user_id: string
@@ -115,7 +144,9 @@ export type Database = {
           active_goal_min?: number
           display_name?: string | null
           passive_goal_min?: number
+          last_reminded_on?: string | null
           leaderboard_anonymous?: boolean
+          reminder_time?: string
           timezone?: string
           updated_at?: string
           user_id: string
@@ -125,7 +156,9 @@ export type Database = {
           active_goal_min?: number
           display_name?: string | null
           passive_goal_min?: number
+          last_reminded_on?: string | null
           leaderboard_anonymous?: boolean
+          reminder_time?: string
           timezone?: string
           updated_at?: string
           user_id?: string
@@ -138,6 +171,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_vapid_public_key: {
+        Args: never
+        Returns: string
+      }
       get_leaderboard: {
         Args: never
         Returns: {

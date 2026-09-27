@@ -57,6 +57,8 @@ export async function getSettings() {
       timezone: "UTC",
       display_name: null,
       leaderboard_anonymous: false,
+      reminder_time: "20:00:00",
+      last_reminded_on: null,
       updated_at: new Date().toISOString(),
     },
   };
