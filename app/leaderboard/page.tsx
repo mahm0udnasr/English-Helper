@@ -44,16 +44,16 @@ export default async function LeaderboardPage({
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight">
-            <FaTrophy className="text-amber-500" /> Leaderboard
+            Leaderboard
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          {/* <p className="mt-1 text-sm text-muted">
             {settings.leaderboard_anonymous
               ? 'Others see you as "Anonymous learner".'
               : `Others see you as "${settings.display_name?.trim() || "Anonymous learner"}".`}{" "}
             <Link href="/settings" className="text-accent hover:underline">
               Change in Settings
             </Link>
-          </p>
+          </p> */}
         </div>
         <div className="flex rounded-lg border border-border bg-surface p-1">
           {SORTS.map((s) => (
