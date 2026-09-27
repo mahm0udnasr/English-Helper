@@ -57,9 +57,10 @@ export default async function Home() {
             Today&apos;s study
           </h1>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        {/* One row on phones: compact streak, full-width progress bar */}
+        <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
           <div
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${
+            className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium sm:px-4 ${
               streak > 0
                 ? "bg-streak/10 text-streak"
                 : "bg-foreground/5 text-muted"
@@ -71,19 +72,25 @@ export default async function Home() {
             }
           >
             <FaFire />
-            {streak} day{streak === 1 ? "" : "s"} streak
+            <span>
+              {streak} day{streak === 1 ? "" : "s"}
+            </span>
             {!todayStudied && streak > 0 && (
-              <span className="font-normal opacity-75">· keep it today</span>
+              <span className="hidden font-normal opacity-75 sm:inline">
+                · keep it today
+              </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-32 overflow-hidden rounded-full bg-border">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:flex-none">
+            <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border sm:w-32 sm:flex-none">
               <div
                 className="h-full rounded-full bg-done transition-all"
                 style={{ width: `${(doneCount / 3) * 100}%` }}
               />
             </div>
-            <span className="text-sm font-medium">{doneCount}/3 done</span>
+            <span className="shrink-0 text-sm font-medium whitespace-nowrap">
+              {doneCount}/3 done
+            </span>
           </div>
         </div>
       </div>
