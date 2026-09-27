@@ -1,69 +1,151 @@
-import Image from "next/image";
+import { FaBookOpenReader, FaFire, FaHeadphones } from "react-icons/fa6";
+import { PiCardsFill } from "react-icons/pi";
+import { Suspense } from "react";
+import type { ExtraVideo } from "@/app/actions/tasks";
+import HomeVideos from "@/app/components/HomeVideos";
+import TaskCard from "@/app/components/TaskCard";
+import { getSettings } from "@/lib/supabase/server";
+import { computeStats } from "@/lib/stats";
+import { todayIn } from "@/lib/today";
 
-export default function Home() {
+export default async function Home() {
+  const { supabase, user, settings } = await getSettings();
+  const today = todayIn(settings.timezone);
+
+  const [{ data: tasks }, { data: extraRows }] = await Promise.all([
+    supabase
+      .from("daily_tasks")
+      .select("day, kind, minutes")
+      .eq("user_id", user.id),
+    supabase
+      .from("extra_study")
+      .select("kind, video_id, title, channel_title, minutes")
+      .eq("user_id", user.id)
+      .eq("day", today)
+      .order("created_at"),
+  ]);
+  const extrasFor = (kind: string): ExtraVideo[] =>
+    (extraRows ?? [])
+      .filter((e) => e.kind === kind)
+      .map((e) => ({
+        id: e.video_id,
+        title: e.title,
+        channelTitle: e.channel_title,
+        minutes: e.minutes,
+      }));
+
+  const rows = tasks ?? [];
+  const done = new Set(rows.filter((t) => t.day === today).map((t) => t.kind));
+  const { streak, todayStudied } = computeStats(rows, today);
+  const doneCount = ["anki", "active", "passive"].filter((k) =>
+    done.has(k),
+  ).length;
+
+  const dateLabel = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    timeZone: settings.timezone,
+  }).format(new Date());
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted">{dateLabel}</p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Today&apos;s study
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="flex flex-wrap items-center gap-4">
+          <div
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${
+              streak > 0
+                ? "bg-streak/10 text-streak"
+                : "bg-foreground/5 text-muted"
+            }`}
+            title={
+              todayStudied || streak === 0
+                ? "Days in a row with at least one task done"
+                : "Finish any task today to keep your streak"
+            }
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+            <FaFire />
+            {streak} day{streak === 1 ? "" : "s"} streak
+            {!todayStudied && streak > 0 && (
+              <span className="font-normal opacity-75">· keep it today</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-32 overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full rounded-full bg-done transition-all"
+                style={{ width: `${(doneCount / 3) * 100}%` }}
+              />
+            </div>
+            <span className="text-sm font-medium">{doneCount}/3 done</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <TaskCard
+          kind="anki"
+          title="Anki Flashcards"
+          description="Finish today's Anki reviews and new cards."
+          icon={<PiCardsFill />}
+          done={done.has("anki")}
+        />
+        <TaskCard
+          kind="active"
+          title="Active Immersion"
+          description={`Watch ${settings.active_goal_min} min with full focus: listen closely, pause, note new words.`}
+          icon={<FaBookOpenReader />}
+          done={done.has("active")}
+        >
+          <Suspense fallback={<VideoPicksSkeleton />}>
+            <HomeVideos
+              kind="active"
+              goalMin={settings.active_goal_min}
+              done={done.has("active")}
+              extras={extrasFor("active")}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          </Suspense>
+        </TaskCard>
+        <TaskCard
+          kind="passive"
+          title="Passive Immersion"
+          description={`Listen for ${settings.passive_goal_min} min in the background while you do other things.`}
+          icon={<FaHeadphones />}
+          done={done.has("passive")}
+        >
+          <Suspense fallback={<VideoPicksSkeleton />}>
+            <HomeVideos
+              kind="passive"
+              goalMin={settings.passive_goal_min}
+              done={done.has("passive")}
+              extras={extrasFor("passive")}
+            />
+          </Suspense>
+        </TaskCard>
+      </div>
+    </main>
+  );
+}
+
+function VideoPicksSkeleton() {
+  return (
+    <div className="flex animate-pulse flex-col gap-2" aria-hidden>
+      <div className="h-3 w-24 rounded bg-border" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <div className="aspect-video w-full rounded-lg bg-border" />
+            <div className="h-3 rounded bg-border" />
+            <div className="h-3 w-2/3 rounded bg-border" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
