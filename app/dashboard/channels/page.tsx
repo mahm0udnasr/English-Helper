@@ -6,6 +6,7 @@ import type { Tables } from "@/lib/database.types";
 import { requireAdmin } from "@/lib/supabase/server";
 import AddDefaultChannelForm from "./AddDefaultChannelForm";
 import DefaultChannelActions from "./DefaultChannelActions";
+import ImportChannelsButton from "./ImportChannelsButton";
 
 export const metadata: Metadata = {
   title: "Default channels · English Helper",
@@ -74,20 +75,23 @@ export default async function DefaultChannelsPage({
               : "Users get the channels in the categories they pick."}
           </p>
         </div>
-        <div className="flex rounded-lg border border-border bg-surface p-1">
-          {TABS.map(({ kind: k, label, icon: Icon }) => (
-            <Link
-              key={k}
-              href={`/dashboard/channels?kind=${k}`}
-              className={`flex items-center gap-2 rounded-md px-4 py-1.5 text-sm transition-colors ${
-                k === kind
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              <Icon /> {label}
-            </Link>
-          ))}
+        <div className="flex items-center gap-2">
+          {kind === "passive" && <ImportChannelsButton />}
+          <div className="flex rounded-lg border border-border bg-surface p-1">
+            {TABS.map(({ kind: k, label, icon: Icon }) => (
+              <Link
+                key={k}
+                href={`/dashboard/channels?kind=${k}`}
+                className={`flex items-center gap-2 rounded-md px-4 py-1.5 text-sm transition-colors ${
+                  k === kind
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                <Icon /> {label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -101,6 +105,7 @@ export default async function DefaultChannelsPage({
             >
               Add a category first
             </Link>
+            , or import channels and categories from a spreadsheet.
           </p>
         ) : (
           <AddDefaultChannelForm
