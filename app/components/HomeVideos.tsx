@@ -1,23 +1,22 @@
 import Link from "next/link";
 import type { ExtraVideo } from "@/app/actions/tasks";
+import { getWatchChannels } from "@/lib/channels";
 import { shuffled } from "@/lib/playlist";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestVideos } from "@/lib/youtube";
 import VideoPicks, { type PickVideo } from "./VideoPicks";
 
-// Pool of recent (≥ 4 min) videos from all of the user's channels of this kind,
-// shuffled on every visit (the playlist is built from it). getLatestVideos is cached, so this is cheap.
+// Pool of recent (≥ 4 min) videos from the user's channels of this kind
+// (their own plus the admin defaults), shuffled on every visit (the playlist
+// is built from it). getLatestVideos is cached, so this is cheap.
 async function getVideoPool(
   kind: "active" | "passive",
 ): Promise<{ channelCount: number; pool: PickVideo[] }> {
   const supabase = await createClient();
-  const { data: channels } = await supabase
-    .from("channels")
-    .select("youtube_channel_id, title")
-    .eq("kind", kind);
+  const channels = await getWatchChannels(supabase, kind);
 
   const perChannel = await Promise.all(
-    (channels ?? []).map(async (c) => {
+    channels.map(async (c) => {
       const videos = await getLatestVideos(c.youtube_channel_id, 50).catch(
         () => [],
       );
@@ -25,7 +24,7 @@ async function getVideoPool(
     }),
   );
   return {
-    channelCount: channels?.length ?? 0,
+    channelCount: channels.length,
     pool: shuffled(perChannel.flat()),
   };
 }
