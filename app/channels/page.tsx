@@ -8,6 +8,7 @@ import AddChannelForm from "./AddChannelForm";
 import ChannelRow from "./ChannelRow";
 import CollapsibleList from "./CollapsibleList";
 import RecommendedChannel from "./RecommendedChannel";
+import UpdateCategoriesButton from "./UpdateCategoriesButton";
 
 export const metadata: Metadata = { title: "Channels · English Helper" };
 
@@ -40,10 +41,14 @@ function KindPanel({
   picked: string[];
 }) {
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+  const canPickCategories = kind === "passive" && categories.length > 0;
+  const showUpdateButton = canPickCategories && picked.length > 0;
 
   return (
     <>
-      {kind === "passive" && categories.length > 0 && (
+      {/* Until categories are picked, the picker shows inline; after that it
+          moves behind the "Update category" button next to Recommended. */}
+      {canPickCategories && picked.length === 0 && (
         <section className="card mb-8">
           <h2 className="mb-1 font-semibold">Categories</h2>
           <p className="mb-4 text-sm text-muted">
@@ -53,24 +58,37 @@ function KindPanel({
         </section>
       )}
 
-      {recommended.length > 0 && (
+      {(recommended.length > 0 || showUpdateButton) && (
         <section className="mb-10">
-          <h2 className="mb-1 text-lg font-semibold">Recommended</h2>
-          <p className="mb-4 text-sm text-muted">
-            Picked for you. Switch off any you don&apos;t want on Home.
-          </p>
-          <CollapsibleList
-            items={recommended.map((c) => (
-              <RecommendedChannel
-                key={c.id}
-                channel={c}
-                hidden={hidden.has(c.id)}
-                category={
-                  c.category_id ? categoryName.get(c.category_id) : undefined
-                }
-              />
-            ))}
-          />
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="mb-1 text-lg font-semibold">Recommended</h2>
+              <p className="text-sm text-muted">
+                Picked for you. Switch off any you don&apos;t want on Home.
+              </p>
+            </div>
+            {showUpdateButton && (
+              <UpdateCategoriesButton categories={categories} picked={picked} />
+            )}
+          </div>
+          {recommended.length > 0 ? (
+            <CollapsibleList
+              items={recommended.map((c) => (
+                <RecommendedChannel
+                  key={c.id}
+                  channel={c}
+                  hidden={hidden.has(c.id)}
+                  category={
+                    c.category_id ? categoryName.get(c.category_id) : undefined
+                  }
+                />
+              ))}
+            />
+          ) : (
+            <p className="text-sm text-muted">
+              No recommended channels for these categories yet.
+            </p>
+          )}
         </section>
       )}
 

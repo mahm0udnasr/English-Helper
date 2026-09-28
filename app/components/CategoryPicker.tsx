@@ -12,10 +12,12 @@ export default function CategoryPicker({
   categories,
   initial,
   saveLabel = "Save",
+  onSaved,
 }: {
   categories: Category[];
   initial: string[];
   saveLabel?: string;
+  onSaved?: () => void;
 }) {
   const [selected, setSelected] = useState(() => new Set(initial));
   const [pending, startTransition] = useTransition();
@@ -35,6 +37,7 @@ export default function CategoryPicker({
     startTransition(async () => {
       const result = await saveCategories([...selected]);
       setError(result.error);
+      if (!result.error) onSaved?.();
     });
 
   return (
