@@ -13,6 +13,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      default_channels: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          thumbnail_url: string | null
+          title: string
+          youtube_channel_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          thumbnail_url?: string | null
+          title: string
+          youtube_channel_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          thumbnail_url?: string | null
+          title?: string
+          youtube_channel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "default_channels_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hidden_default_channels: {
+        Row: {
+          default_channel_id: string
+          user_id: string
+        }
+        Insert: {
+          default_channel_id: string
+          user_id?: string
+        }
+        Update: {
+          default_channel_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_default_channels_default_channel_id_fkey"
+            columns: ["default_channel_id"]
+            isOneToOne: false
+            referencedRelation: "default_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_categories: {
+        Row: {
+          category_id: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          user_id?: string
+        }
+        Update: {
+          category_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channels: {
         Row: {
           created_at: string
