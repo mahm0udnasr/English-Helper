@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FaFire, FaTrophy } from "react-icons/fa6";
+import { TabLinks, TabPanel } from "@/app/components/UrlTabs";
 import { formatHours } from "@/lib/stats";
 import { getSettings } from "@/lib/supabase/server";
 
@@ -13,24 +13,96 @@ const SORTS = [
 ] as const;
 
 type SortBy = (typeof SORTS)[number]["by"];
+const SORT_VALUES = SORTS.map((s) => s.by);
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-export default async function LeaderboardPage({
-  searchParams,
-}: PageProps<"/leaderboard">) {
-  const { by: byParam } = await searchParams;
-  const by: SortBy = SORTS.some((s) => s.by === byParam)
-    ? (byParam as SortBy)
-    : "hours";
+type Row = {
+  display_name: string;
+  is_me: boolean;
+  active_min: number;
+  passive_min: number;
+  current_streak: number;
+  perfect_days: number;
+  totalMin: number;
+};
 
+function LeaderboardTable({ rows }: { rows: Row[] }) {
+  return (
+    <div className="card overflow-x-auto p-0">
+      <table className="w-full text-sm">
+        <thead className="border-b border-border text-left text-xs text-muted">
+          <tr>
+            <th className="px-4 py-3 font-medium">#</th>
+            <th className="px-4 py-3 font-medium">Learner</th>
+            <th className="px-4 py-3 text-right font-medium">Immersion</th>
+            <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
+              Active / Passive
+            </th>
+            <th className="px-4 py-3 text-right font-medium">Streak</th>
+            <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
+              Perfect days
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr
+              key={i}
+              className={`border-b border-border last:border-0 ${
+                r.is_me ? "bg-accent/10 font-medium" : ""
+              }`}
+            >
+              <td className="px-4 py-3 text-base">
+                {MEDALS[i] ?? <span className="text-muted">{i + 1}</span>}
+              </td>
+              <td className="px-4 py-3">
+                {r.display_name}
+                {r.is_me && (
+                  <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">
+                    You
+                  </span>
+                )}
+              </td>
+              <td className="px-4 py-3 text-right tabular-nums">
+                {formatHours(r.totalMin)}
+              </td>
+              <td className="hidden px-4 py-3 text-right text-muted tabular-nums sm:table-cell">
+                {formatHours(r.active_min)} / {formatHours(r.passive_min)}
+              </td>
+              <td className="px-4 py-3 text-right tabular-nums">
+                <span className="inline-flex items-center gap-1">
+                  {r.current_streak}
+                  <FaFire
+                    className={
+                      r.current_streak > 0 ? "text-streak" : "text-muted"
+                    }
+                  />
+                </span>
+              </td>
+              <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">
+                {r.perfect_days}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Every sort is rendered up front so switching tabs doesn't hit the server.
+export default async function LeaderboardPage() {
   const { supabase, settings } = await getSettings();
   const { data, error } = await supabase.rpc("get_leaderboard");
 
-  const rows = (data ?? [])
-    .map((r) => ({ ...r, totalMin: r.active_min + r.passive_min }))
-    .sort((a, b) => {
-      const key = (r: typeof a) =>
+  const rows = (data ?? []).map((r) => ({
+    ...r,
+    totalMin: r.active_min + r.passive_min,
+  }));
+  const sortRows = (by: SortBy) =>
+    rows.toSorted((a, b) => {
+      const key = (r: Row) =>
         by === "streak"
           ? r.current_streak
           : by === "perfect"
@@ -55,21 +127,10 @@ export default async function LeaderboardPage({
             </Link>
           </p> */}
         </div>
-        <div className="flex rounded-lg border border-border bg-surface p-1">
-          {SORTS.map((s) => (
-            <Link
-              key={s.by}
-              href={`/leaderboard?by=${s.by}`}
-              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                s.by === by
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {s.label}
-            </Link>
-          ))}
-        </div>
+        <TabLinks
+          param="by"
+          tabs={SORTS.map((s) => ({ value: s.by, label: s.label }))}
+        />
       </div>
 
       {error ? (
@@ -82,67 +143,11 @@ export default async function LeaderboardPage({
           the board!
         </p>
       ) : (
-        <div className="card overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead className="border-b border-border text-left text-xs text-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">#</th>
-                <th className="px-4 py-3 font-medium">Learner</th>
-                <th className="px-4 py-3 text-right font-medium">Immersion</th>
-                <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
-                  Active / Passive
-                </th>
-                <th className="px-4 py-3 text-right font-medium">Streak</th>
-                <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
-                  Perfect days
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr
-                  key={i}
-                  className={`border-b border-border last:border-0 ${
-                    r.is_me ? "bg-accent/10 font-medium" : ""
-                  }`}
-                >
-                  <td className="px-4 py-3 text-base">
-                    {MEDALS[i] ?? <span className="text-muted">{i + 1}</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.display_name}
-                    {r.is_me && (
-                      <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">
-                        You
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {formatHours(r.totalMin)}
-                  </td>
-                  <td className="hidden px-4 py-3 text-right text-muted tabular-nums sm:table-cell">
-                    {formatHours(r.active_min)} / {formatHours(r.passive_min)}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    <span className="inline-flex items-center gap-1">
-                      {r.current_streak}
-                      <FaFire
-                        className={
-                          r.current_streak > 0
-                            ? "text-streak"
-                            : "text-muted"
-                        }
-                      />
-                    </span>
-                  </td>
-                  <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">
-                    {r.perfect_days}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        SORTS.map((s) => (
+          <TabPanel key={s.by} param="by" value={s.by} values={SORT_VALUES}>
+            <LeaderboardTable rows={sortRows(s.by)} />
+          </TabPanel>
+        ))
       )}
     </main>
   );
