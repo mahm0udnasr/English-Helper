@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Database } from "@/lib/database.types";
 
 export async function createClient() {
@@ -36,6 +36,15 @@ export async function requireUser() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, user };
+}
+
+// Like getSettings, but 404s for anyone who isn't an admin. The role lives in
+// app_metadata, which only the service role can write (users can edit their
+// own user_settings, so a flag there could be self-granted).
+export async function requireAdmin() {
+  const result = await getSettings();
+  if (result.user.app_metadata.role !== "admin") notFound();
+  return result;
 }
 
 export async function getSettings() {
