@@ -76,9 +76,7 @@ export default async function UsersPage() {
                     {formatDate(u.last_sign_in_at)}
                   </td>
                   <td className="px-4 py-3">
-                    {u.user_id === user.id ? (
-                      <p className="text-right text-xs text-muted">You</p>
-                    ) : (
+                    {u.user_id === user.id ? null : (
                       <UserActions
                         userId={u.user_id}
                         label={u.display_name ?? u.email ?? "this user"}
