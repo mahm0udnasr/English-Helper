@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FaBookOpenReader, FaHeadphones } from "react-icons/fa6";
 import ChannelAvatar from "@/app/components/ChannelAvatar";
+import { TabLinks, TabPanel } from "@/app/components/UrlTabs";
 import type { Tables } from "@/lib/database.types";
 import { requireAdmin } from "@/lib/supabase/server";
 import AddDefaultChannelForm from "./AddDefaultChannelForm";
@@ -11,11 +12,6 @@ import ImportChannelsButton from "./ImportChannelsButton";
 export const metadata: Metadata = {
   title: "Default channels · English Helper",
 };
-
-const TABS = [
-  { kind: "active", label: "Active", icon: FaBookOpenReader },
-  { kind: "passive", label: "Passive", icon: FaHeadphones },
-] as const;
 
 function ChannelList({ channels }: { channels: Tables<"default_channels">[] }) {
   return (
@@ -42,59 +38,22 @@ function ChannelList({ channels }: { channels: Tables<"default_channels">[] }) {
   );
 }
 
-export default async function DefaultChannelsPage({
-  searchParams,
-}: PageProps<"/dashboard/channels">) {
-  const { kind: kindParam } = await searchParams;
-  const kind = kindParam === "passive" ? "passive" : "active";
+type Kind = "active" | "passive";
+const KINDS = ["active", "passive"] as const;
 
-  const { supabase } = await requireAdmin();
-  const [{ data: channels }, { data: categories }] = await Promise.all([
-    supabase
-      .from("default_channels")
-      .select("*")
-      .eq("kind", kind)
-      .order("created_at"),
-    supabase
-      .from("categories")
-      .select("id, name")
-      .order("sort_order")
-      .order("name"),
-  ]);
-
-  const needsCategory = kind === "passive" && !categories?.length;
+function KindPanel({
+  kind,
+  channels,
+  categories,
+}: {
+  kind: Kind;
+  channels: Tables<"default_channels">[];
+  categories: { id: string; name: string }[];
+}) {
+  const needsCategory = kind === "passive" && !categories.length;
 
   return (
-    <main>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Channels</h1>
-          <p className="mt-1 text-sm text-muted">
-            {kind === "active"
-              ? "Every user gets these; they can hide ones they don't want."
-              : "Users get the channels in the categories they pick."}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {kind === "passive" && <ImportChannelsButton />}
-          <div className="flex rounded-lg border border-border bg-surface p-1">
-            {TABS.map(({ kind: k, label, icon: Icon }) => (
-              <Link
-                key={k}
-                href={`/dashboard/channels?kind=${k}`}
-                className={`flex items-center gap-2 rounded-md px-4 py-1.5 text-sm transition-colors ${
-                  k === kind
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                <Icon /> {label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-
+    <>
       <div className="card mb-6">
         {needsCategory ? (
           <p className="text-sm text-muted">
@@ -108,15 +67,11 @@ export default async function DefaultChannelsPage({
             , or import channels and categories from a spreadsheet.
           </p>
         ) : (
-          <AddDefaultChannelForm
-            key={kind}
-            kind={kind}
-            categories={categories ?? []}
-          />
+          <AddDefaultChannelForm kind={kind} categories={categories} />
         )}
       </div>
 
-      {!channels?.length ? (
+      {!channels.length ? (
         <p className="py-12 text-center text-muted">
           No default {kind} channels yet.
         </p>
@@ -124,7 +79,7 @@ export default async function DefaultChannelsPage({
         <ChannelList channels={channels} />
       ) : (
         <div className="flex flex-col gap-8">
-          {(categories ?? []).map((category) => {
+          {categories.map((category) => {
             const inCategory = channels.filter(
               (c) => c.category_id === category.id,
             );
@@ -144,6 +99,61 @@ export default async function DefaultChannelsPage({
           })}
         </div>
       )}
+    </>
+  );
+}
+
+// Both tabs are rendered up front so switching doesn't hit the server.
+export default async function DefaultChannelsPage() {
+  const { supabase } = await requireAdmin();
+  const [{ data: channels }, { data: categories }] = await Promise.all([
+    supabase.from("default_channels").select("*").order("created_at"),
+    supabase
+      .from("categories")
+      .select("id, name")
+      .order("sort_order")
+      .order("name"),
+  ]);
+
+  return (
+    <main>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Channels</h1>
+          <TabPanel param="kind" value="active" values={KINDS}>
+            <p className="mt-1 text-sm text-muted">
+              Every user gets these; they can hide ones they don&apos;t want.
+            </p>
+          </TabPanel>
+          <TabPanel param="kind" value="passive" values={KINDS}>
+            <p className="mt-1 text-sm text-muted">
+              Users get the channels in the categories they pick.
+            </p>
+          </TabPanel>
+        </div>
+        <div className="flex items-center gap-2">
+          <TabPanel param="kind" value="passive" values={KINDS}>
+            <ImportChannelsButton />
+          </TabPanel>
+          <TabLinks
+            param="kind"
+            tabs={[
+              { value: "active", label: "Active", icon: <FaBookOpenReader /> },
+              { value: "passive", label: "Passive", icon: <FaHeadphones /> },
+            ]}
+          />
+        </div>
+      </div>
+
+      {KINDS.map((kind) => (
+        <TabPanel key={kind} param="kind" value={kind} values={KINDS}>
+          <KindPanel
+            kind={kind}
+            channels={(channels ?? []).filter((c) => c.kind === kind)}
+            categories={categories ?? []}
+          />
+        </TabPanel>
+      ))}
     </main>
   );
 }
