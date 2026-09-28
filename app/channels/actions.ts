@@ -89,3 +89,25 @@ export async function syncChannel(id: string): Promise<{ error?: string }> {
   revalidatePath("/");
   return {};
 }
+
+// Hide or show one of the admin's default channels for this user.
+export async function setDefaultChannelHidden(
+  defaultChannelId: string,
+  hidden: boolean,
+): Promise<{ error?: string }> {
+  const { supabase, user } = await requireUser();
+  const { error } = hidden
+    ? await supabase
+        .from("hidden_default_channels")
+        .upsert({ user_id: user.id, default_channel_id: defaultChannelId })
+    : await supabase
+        .from("hidden_default_channels")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("default_channel_id", defaultChannelId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/channels");
+  revalidatePath("/");
+  return {};
+}

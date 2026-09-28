@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FaBookOpenReader, FaHeadphones } from "react-icons/fa6";
+import CategoryPicker from "@/app/components/CategoryPicker";
 import { getSettings } from "@/lib/supabase/server";
 import AddChannelForm from "./AddChannelForm";
 import ChannelRow from "./ChannelRow";
+import RecommendedChannel from "./RecommendedChannel";
 
 export const metadata: Metadata = { title: "Channels · English Helper" };
 
@@ -19,12 +21,46 @@ export default async function ChannelsPage({
   const kind = kindParam === "passive" ? "passive" : "active";
 
   const { supabase, user, settings } = await getSettings();
-  const { data: channels } = await supabase
-    .from("channels")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("kind", kind)
-    .order("created_at");
+  const [
+    { data: channels },
+    { data: defaults },
+    { data: hiddenRows },
+    { data: categories },
+    { data: pickedRows },
+  ] = await Promise.all([
+    supabase
+      .from("channels")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("kind", kind)
+      .order("created_at"),
+    supabase
+      .from("default_channels")
+      .select("id, title, thumbnail_url, youtube_channel_id, category_id")
+      .eq("kind", kind)
+      .order("created_at"),
+    supabase
+      .from("hidden_default_channels")
+      .select("default_channel_id")
+      .eq("user_id", user.id),
+    supabase
+      .from("categories")
+      .select("id, name")
+      .order("sort_order")
+      .order("name"),
+    supabase
+      .from("user_categories")
+      .select("category_id")
+      .eq("user_id", user.id),
+  ]);
+
+  const hidden = new Set(hiddenRows?.map((h) => h.default_channel_id));
+  const picked = (pickedRows ?? []).map((p) => p.category_id);
+  const categoryName = new Map(categories?.map((c) => [c.id, c.name]));
+  // Passive defaults only apply for the categories the user picked.
+  const recommended = (defaults ?? []).filter(
+    (c) => kind === "active" || picked.includes(c.category_id ?? ""),
+  );
 
   const goal =
     kind === "active" ? settings.active_goal_min : settings.passive_goal_min;
@@ -56,6 +92,38 @@ export default async function ChannelsPage({
         </div>
       </div>
 
+      {kind === "passive" && !!categories?.length && (
+        <section className="card mb-8">
+          <h2 className="mb-1 font-semibold">Categories</h2>
+          <p className="mb-4 text-sm text-muted">
+            You get the recommended channels from the categories you pick.
+          </p>
+          <CategoryPicker categories={categories} initial={picked} />
+        </section>
+      )}
+
+      {recommended.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-1 text-lg font-semibold">Recommended</h2>
+          <p className="mb-4 text-sm text-muted">
+            Picked for you. Switch off any you don&apos;t want on Home.
+          </p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {recommended.map((c) => (
+              <RecommendedChannel
+                key={c.id}
+                channel={c}
+                hidden={hidden.has(c.id)}
+                category={
+                  c.category_id ? categoryName.get(c.category_id) : undefined
+                }
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <h2 className="mb-4 text-lg font-semibold">Your channels</h2>
       <div className="card mb-6">
         <AddChannelForm key={kind} kind={kind} />
       </div>
@@ -75,7 +143,7 @@ export default async function ChannelsPage({
         </ul>
       ) : (
         <p className="py-12 text-center text-muted">
-          No {kind} channels yet. Add one above.
+          You haven&apos;t added any {kind} channels yet.
         </p>
       )}
     </main>
