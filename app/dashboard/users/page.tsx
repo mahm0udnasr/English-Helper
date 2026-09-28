@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/supabase/server";
+import UserActions from "./UserActions";
 
 export const metadata: Metadata = { title: "Users · English Helper" };
 
 export default async function UsersPage() {
-  const { supabase, settings } = await requireAdmin();
+  const { supabase, user, settings } = await requireAdmin();
   const { data, error } = await supabase.rpc("admin_list_users");
   const users = data ?? [];
 
@@ -44,6 +45,7 @@ export default async function UsersPage() {
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">
                   Last sign-in
                 </th>
+                <th className="px-4 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -54,6 +56,11 @@ export default async function UsersPage() {
                 >
                   <td className="px-4 py-3">
                     {u.display_name ?? <span className="text-muted">—</span>}
+                    {u.blocked && (
+                      <span className="ml-2 rounded-full bg-red-500/10 px-2 py-0.5 text-xs text-red-500">
+                        Blocked
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">{u.email}</td>
                   <td className="hidden px-4 py-3 capitalize md:table-cell">
@@ -67,6 +74,17 @@ export default async function UsersPage() {
                   </td>
                   <td className="hidden px-4 py-3 whitespace-nowrap text-muted tabular-nums sm:table-cell">
                     {formatDate(u.last_sign_in_at)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.user_id === user.id ? (
+                      <p className="text-right text-xs text-muted">You</p>
+                    ) : (
+                      <UserActions
+                        userId={u.user_id}
+                        label={u.display_name ?? u.email ?? "this user"}
+                        blocked={u.blocked}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}

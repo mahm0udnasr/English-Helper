@@ -171,9 +171,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       admin_list_users: {
         Args: never
         Returns: {
+          blocked: boolean
           created_at: string
           display_name: string | null
           email: string | null
@@ -183,9 +188,17 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_set_user_blocked: {
+        Args: { p_blocked: boolean; p_user_id: string }
+        Returns: undefined
+      }
       get_vapid_public_key: {
         Args: never
         Returns: string
+      }
+      is_admin: {
+        Args: never
+        Returns: boolean
       }
       get_leaderboard: {
         Args: never
