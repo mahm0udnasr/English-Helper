@@ -4,7 +4,13 @@ import LoginForm from "./LoginForm";
 
 export const metadata: Metadata = { title: "Sign in · English Helper" };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="card w-full max-w-sm">
@@ -15,7 +21,7 @@ export default function LoginPage() {
             Track Anki and immersion every day.
           </p>
         </div>
-        <LoginForm />
+        <LoginForm googleFailed={error === "google"} />
       </div>
     </main>
   );
