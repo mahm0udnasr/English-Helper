@@ -2,6 +2,7 @@ import { FaBookOpenReader, FaFire, FaHeadphones } from "react-icons/fa6";
 import { PiCardsFill } from "react-icons/pi";
 import { Suspense } from "react";
 import type { ExtraVideo } from "@/app/actions/tasks";
+import CategoryDialog from "@/app/components/CategoryDialog";
 import HomeVideos from "@/app/components/HomeVideos";
 import TaskCard from "@/app/components/TaskCard";
 import TimezoneNotice from "@/app/components/TimezoneNotice";
@@ -13,7 +14,12 @@ export default async function Home() {
   const { supabase, user, settings } = await getSettings();
   const today = todayIn(settings.timezone);
 
-  const [{ data: tasks }, { data: extraRows }] = await Promise.all([
+  const [
+    { data: tasks },
+    { data: extraRows },
+    { data: categories },
+    { count: pickedCount },
+  ] = await Promise.all([
     supabase
       .from("daily_tasks")
       .select("day, kind, minutes")
@@ -24,6 +30,15 @@ export default async function Home() {
       .eq("user_id", user.id)
       .eq("day", today)
       .order("created_at"),
+    supabase
+      .from("categories")
+      .select("id, name")
+      .order("sort_order")
+      .order("name"),
+    supabase
+      .from("user_categories")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
   ]);
   const extrasFor = (kind: string): ExtraVideo[] =>
     (extraRows ?? [])
@@ -51,6 +66,9 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      {!pickedCount && !!categories?.length && (
+        <CategoryDialog categories={categories} />
+      )}
       <div className="mb-6 empty:hidden">
         <TimezoneNotice saved={settings.timezone} />
       </div>
