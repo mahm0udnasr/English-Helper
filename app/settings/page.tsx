@@ -7,6 +7,7 @@ import { todayIn } from "@/lib/today";
 import TimezoneNotice from "@/app/components/TimezoneNotice";
 import SettingsForm from "./SettingsForm";
 import InstallApp from "./InstallApp";
+import RecommendedSettings from "./RecommendedSettings";
 import ReminderSettings from "./ReminderSettings";
 import { getVapidPublicKey } from "./reminders";
 import ThemeSwitch from "./ThemeSwitch";
@@ -66,6 +67,17 @@ export default async function SettingsPage() {
           Daily goals & preferences
         </h2>
         <SettingsForm settings={settings} />
+      </section>
+
+      <section className="card">
+        <h2 className="text-lg font-semibold">Recommended channels</h2>
+        <p className="mb-4 text-sm text-muted">
+          Turn off to only get videos from the channels you added yourself.
+        </p>
+        <RecommendedSettings
+          active={settings.show_active_defaults}
+          passive={settings.show_passive_defaults}
+        />
       </section>
 
       <section className="card">

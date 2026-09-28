@@ -11,9 +11,10 @@ import VideoPicks, { type PickVideo } from "./VideoPicks";
 // is built from it). getLatestVideos is cached, so this is cheap.
 async function getVideoPool(
   kind: "active" | "passive",
+  includeDefaults: boolean,
 ): Promise<{ channelCount: number; pool: PickVideo[] }> {
   const supabase = await createClient();
-  const channels = await getWatchChannels(supabase, kind);
+  const channels = await getWatchChannels(supabase, kind, includeDefaults);
 
   const perChannel = await Promise.all(
     channels.map(async (c) => {
@@ -34,11 +35,13 @@ export default async function HomeVideos({
   goalMin,
   done,
   extras,
+  showDefaults,
 }: {
   kind: "active" | "passive";
   goalMin: number;
   done: boolean;
   extras: ExtraVideo[];
+  showDefaults: boolean;
 }) {
   if (!process.env.YOUTUBE_API_KEY) {
     return (
@@ -48,7 +51,7 @@ export default async function HomeVideos({
     );
   }
 
-  const { channelCount, pool } = await getVideoPool(kind);
+  const { channelCount, pool } = await getVideoPool(kind, showDefaults);
   if (channelCount === 0) {
     return (
       <p className="text-sm text-muted">

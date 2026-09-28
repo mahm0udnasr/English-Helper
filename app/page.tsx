@@ -66,9 +66,9 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-      {!pickedCount && !!categories?.length && (
-        <CategoryDialog categories={categories} />
-      )}
+      {settings.show_passive_defaults &&
+        !pickedCount &&
+        !!categories?.length && <CategoryDialog categories={categories} />}
       <div className="mb-6 empty:hidden">
         <TimezoneNotice saved={settings.timezone} />
       </div>
@@ -138,6 +138,7 @@ export default async function Home() {
               goalMin={settings.active_goal_min}
               done={done.has("active")}
               extras={extrasFor("active")}
+              showDefaults={settings.show_active_defaults}
             />
           </Suspense>
         </TaskCard>
@@ -154,6 +155,7 @@ export default async function Home() {
               goalMin={settings.passive_goal_min}
               done={done.has("passive")}
               extras={extrasFor("passive")}
+              showDefaults={settings.show_passive_defaults}
             />
           </Suspense>
         </TaskCard>

@@ -74,6 +74,8 @@ export const getSettings = cache(async () => {
       display_name: null,
       leaderboard_anonymous: false,
       reminder_time: "20:00:00",
+      show_active_defaults: true,
+      show_passive_defaults: true,
       last_reminded_on: null,
       updated_at: new Date().toISOString(),
     },

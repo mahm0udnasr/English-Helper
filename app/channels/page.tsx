@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { FaBookOpenReader, FaHeadphones } from "react-icons/fa6";
 import CategoryPicker from "@/app/components/CategoryPicker";
 import { TabLinks, TabPanel } from "@/app/components/UrlTabs";
@@ -32,6 +33,7 @@ function KindPanel({
   hidden,
   categories,
   picked,
+  showDefaults,
 }: {
   kind: Kind;
   channels: Tables<"channels">[];
@@ -39,9 +41,11 @@ function KindPanel({
   hidden: Set<string>;
   categories: { id: string; name: string }[];
   picked: string[];
+  showDefaults: boolean;
 }) {
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
-  const canPickCategories = kind === "passive" && categories.length > 0;
+  const canPickCategories =
+    showDefaults && kind === "passive" && categories.length > 0;
   const showUpdateButton = canPickCategories && picked.length > 0;
 
   return (
@@ -58,7 +62,16 @@ function KindPanel({
         </section>
       )}
 
-      {(recommended.length > 0 || showUpdateButton) && (
+      {!showDefaults && (
+        <p className="card mb-8 text-sm text-muted">
+          Recommended {kind} channels are off.{" "}
+          <Link href="/settings" className="text-accent hover:underline">
+            Turn them on in Settings
+          </Link>
+        </p>
+      )}
+
+      {showDefaults && (recommended.length > 0 || showUpdateButton) && (
         <section className="mb-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -199,6 +212,11 @@ export default async function ChannelsPage() {
             hidden={hidden}
             categories={categories ?? []}
             picked={picked}
+            showDefaults={
+              kind === "active"
+                ? settings.show_active_defaults
+                : settings.show_passive_defaults
+            }
           />
         </TabPanel>
       ))}

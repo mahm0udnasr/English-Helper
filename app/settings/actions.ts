@@ -59,3 +59,23 @@ export async function setTimezone(timezone: string) {
   revalidatePath("/", "layout");
   return {};
 }
+
+// Turns the admin's recommended channels on or off for one kind.
+export async function setShowDefaults(
+  kind: "active" | "passive",
+  on: boolean,
+): Promise<{ error?: string }> {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from("user_settings")
+    .update({
+      ...(kind === "active"
+        ? { show_active_defaults: on }
+        : { show_passive_defaults: on }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return {};
+}
