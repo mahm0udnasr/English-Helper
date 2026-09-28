@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaUsers } from "react-icons/fa6";
+import { FaLayerGroup, FaUsers } from "react-icons/fa6";
 
 const links = [
   { href: "/dashboard/users", label: "Users", icon: FaUsers },
+  { href: "/dashboard/categories", label: "Categories", icon: FaLayerGroup },
 ] as const;
 
 // Vertical on tablets and up, a scrollable row on phones.
@@ -14,9 +15,6 @@ export default function Sidebar() {
 
   return (
     <aside className="shrink-0 sm:w-48">
-      <p className="mb-2 hidden px-3 text-xs font-medium uppercase tracking-wide text-muted sm:block">
-        Admin
-      </p>
       <ul className="flex gap-1 overflow-x-auto sm:flex-col">
         {links.map(({ href, label, icon: Icon }) => (
           <li key={href}>
