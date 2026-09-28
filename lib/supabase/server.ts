@@ -62,10 +62,12 @@ export const getSettings = cache(async () => {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Defaults first, so a column the database doesn't have yet (e.g. before a
+  // migration is pushed) still reads as its default instead of undefined.
   return {
     supabase,
     user,
-    settings: data ?? {
+    settings: {
       user_id: user.id,
       active_goal_min: 30,
       passive_goal_min: 60,
@@ -78,6 +80,7 @@ export const getSettings = cache(async () => {
       show_passive_defaults: true,
       last_reminded_on: null,
       updated_at: new Date().toISOString(),
+      ...data,
     },
   };
 });
