@@ -41,20 +41,18 @@ export default function InfoPopover({
   }, [open]);
 
   // Centered under the icon, then nudged sideways to stay on screen.
-  // The arrow stays under the icon.
+  // The arrow stays under the icon. Positioned with `left` rather than a
+  // transform: phones size the page to the untransformed box, so a
+  // translated tooltip still made the page scroll sideways.
   useLayoutEffect(() => {
     const el = tooltipRef.current;
     if (!open || !el) return;
-    el.style.setProperty("--shift", "0px");
-    const rect = el.getBoundingClientRect();
-    const maxRight = window.innerWidth - EDGE_MARGIN;
-    const shift =
-      rect.left < EDGE_MARGIN
-        ? EDGE_MARGIN - rect.left
-        : rect.right > maxRight
-          ? maxRight - rect.right
-          : 0;
-    el.style.setProperty("--shift", `${shift}px`);
+    const anchor = el.parentElement!.getBoundingClientRect();
+    const width = el.offsetWidth;
+    const maxLeft = document.documentElement.clientWidth - EDGE_MARGIN - width;
+    const centered = anchor.left + anchor.width / 2 - width / 2;
+    const left = Math.max(EDGE_MARGIN, Math.min(centered, maxLeft));
+    el.style.left = `${left - anchor.left}px`;
   }, [open]);
 
   return (
@@ -82,8 +80,7 @@ export default function InfoPopover({
             ref={tooltipRef}
             id={tooltipId}
             role="tooltip"
-            style={{ transform: "translateX(calc(-50% + var(--shift, 0px)))" }}
-            className="absolute top-full left-1/2 z-30 mt-2 w-max max-w-60 rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-relaxed font-normal text-foreground shadow-lg"
+            className="absolute top-full left-0 z-30 mt-2 w-max max-w-[min(15rem,calc(100vw-24px))] rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-relaxed font-normal text-foreground shadow-lg"
           >
             {text}
           </span>
