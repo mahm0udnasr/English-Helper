@@ -2,6 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import ChannelAvatar from "@/app/components/ChannelAvatar";
+import Switch from "@/app/components/Switch";
 import { setDefaultChannelHidden } from "./actions";
 
 // One of the admin's default channels, with a switch to show or hide its
@@ -53,22 +54,11 @@ export default function RecommendedChannel({
         {category && <p className="text-xs text-muted">{category}</p>}
         {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        aria-label={`Show videos from ${channel.title}`}
-        onClick={toggle}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          on ? "bg-accent" : "bg-border"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
-            on ? "translate-x-5" : ""
-          }`}
-        />
-      </button>
+      <Switch
+        on={on}
+        onToggle={toggle}
+        label={`Show videos from ${channel.title}`}
+      />
     </li>
   );
 }
