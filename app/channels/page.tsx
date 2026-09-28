@@ -5,6 +5,7 @@ import CategoryPicker from "@/app/components/CategoryPicker";
 import { getSettings } from "@/lib/supabase/server";
 import AddChannelForm from "./AddChannelForm";
 import ChannelRow from "./ChannelRow";
+import CollapsibleList from "./CollapsibleList";
 import RecommendedChannel from "./RecommendedChannel";
 
 export const metadata: Metadata = { title: "Channels · English Helper" };
@@ -108,8 +109,9 @@ export default async function ChannelsPage({
           <p className="mb-4 text-sm text-muted">
             Picked for you. Switch off any you don&apos;t want on Home.
           </p>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {recommended.map((c) => (
+          <CollapsibleList
+            key={kind}
+            items={recommended.map((c) => (
               <RecommendedChannel
                 key={c.id}
                 channel={c}
@@ -119,7 +121,7 @@ export default async function ChannelsPage({
                 }
               />
             ))}
-          </ul>
+          />
         </section>
       )}
 
@@ -136,11 +138,12 @@ export default async function ChannelsPage({
       )}
 
       {channels?.length ? (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {channels.map((channel) => (
+        <CollapsibleList
+          key={kind}
+          items={channels.map((channel) => (
             <ChannelRow key={channel.id} channel={channel} />
           ))}
-        </ul>
+        />
       ) : (
         <p className="py-12 text-center text-muted">
           You haven&apos;t added any {kind} channels yet.
