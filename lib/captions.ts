@@ -1,6 +1,48 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Json } from "@/lib/database.types";
 
 export type Cue = { start: number; end: number; text: string }; // seconds
+
+// English captions for a video, or null when it has none. Each video is
+// fetched once and saved in video_captions for everyone. YouTube is asked
+// directly first (free, and works from home connections); it refuses cloud
+// servers like Vercel's, so then Supadata's transcript API is used, when
+// SUPADATA_API_KEY is set.
+export async function getEnglishCaptions(
+  supabase: SupabaseClient<Database>,
+  videoId: string,
+): Promise<Cue[] | null> {
+  const { data: saved } = await supabase
+    .from("video_captions")
+    .select("cues")
+    .eq("video_id", videoId)
+    .maybeSingle();
+  if (saved) return saved.cues as Cue[] | null;
+
+  const hasSupadata = !!process.env.SUPADATA_API_KEY;
+  let source: "youtube" | "supadata" = "youtube";
+  let cues = await fromYouTube(videoId).catch((e) => {
+    if (!hasSupadata) throw e;
+    console.warn(`YouTube captions for ${videoId}, trying Supadata:`, e);
+    return undefined;
+  });
+  // Also ask Supadata when YouTube listed no English track: it sometimes
+  // hides tracks the player still shows.
+  if (!cues && hasSupadata) {
+    cues = await fromSupadata(videoId);
+    source = "supadata";
+  }
+  cues ??= null;
+
+  // Best effort: a failed save only means the next viewer fetches it again.
+  // YouTube's "none" isn't saved, so Supadata can still be tried later.
+  if (cues || source === "supadata")
+    await supabase
+      .from("video_captions")
+      .insert({ video_id: videoId, cues: cues as Json, source });
+  return cues;
+}
 
 // The Data API only lets a video's owner download its captions, so this asks
 // YouTube's player endpoint (as the Android app) for the caption tracks and
@@ -17,11 +59,8 @@ const USER_AGENT = `com.google.android.youtube/${CLIENT.clientVersion} (Linux; U
 
 type CaptionTrack = { baseUrl: string; languageCode: string; kind?: string };
 
-// English captions for a video, or null when it has none. Uploaded captions
-// win over auto-generated ones.
-export async function getEnglishCaptions(
-  videoId: string,
-): Promise<Cue[] | null> {
+// Uploaded captions win over auto-generated ones. null: no English track.
+async function fromYouTube(videoId: string): Promise<Cue[] | null> {
   const res = await fetch(PLAYER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
@@ -52,6 +91,32 @@ export async function getEnglishCaptions(
   });
   if (!xml.ok) throw new Error(`YouTube captions error ${xml.status}`);
   return parseTimedText(await xml.text());
+}
+
+const SUPADATA_URL = "https://api.supadata.ai/v1/youtube/transcript";
+
+// https://docs.supadata.ai: 200 with timed chunks (ms), or 206 when the video
+// has no transcript. Without lang=en it may answer in another language.
+async function fromSupadata(videoId: string): Promise<Cue[] | null> {
+  const params = new URLSearchParams({ videoId, lang: "en" });
+  const res = await fetch(`${SUPADATA_URL}?${params}`, {
+    headers: { "x-api-key": process.env.SUPADATA_API_KEY! },
+    cache: "no-store",
+  });
+  if (res.status === 206) return null;
+  if (!res.ok) throw new Error(`Supadata error ${res.status}`);
+  const data: {
+    lang: string;
+    content: { text: string; offset: number; duration: number }[];
+  } = await res.json();
+  if (!data.lang?.startsWith("en")) return null;
+  return data.content
+    .map((c) => ({
+      start: c.offset / 1000,
+      end: (c.offset + c.duration) / 1000,
+      text: decodeEntities(c.text).replace(/\s+/g, " ").trim(),
+    }))
+    .filter((c) => c.text);
 }
 
 // Parses YouTube's "format 3" timed text: <p t="ms" d="ms">text</p>, where

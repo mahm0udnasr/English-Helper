@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getEnglishCaptions } from "@/lib/captions";
+import { createClient } from "@/lib/supabase/server";
 
 // English subtitles for the video player: { cues } or { cues: null } when the
 // video has none. Found captions rarely change, so the browser keeps them a
@@ -13,7 +14,7 @@ export async function GET(
     return Response.json({ error: "Bad video id" }, { status: 400 });
 
   try {
-    const cues = await getEnglishCaptions(videoId);
+    const cues = await getEnglishCaptions(await createClient(), videoId);
     return Response.json(
       { cues },
       {

@@ -277,6 +277,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      video_captions: {
+        Row: {
+          cues: Json | null;
+          fetched_at: string;
+          source: string;
+          video_id: string;
+        };
+        Insert: {
+          cues?: Json | null;
+          fetched_at?: string;
+          source: string;
+          video_id: string;
+        };
+        Update: {
+          cues?: Json | null;
+          fetched_at?: string;
+          source?: string;
+          video_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
