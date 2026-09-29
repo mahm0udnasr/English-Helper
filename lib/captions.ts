@@ -93,17 +93,24 @@ async function fromYouTube(videoId: string): Promise<Cue[] | null> {
   return parseTimedText(await xml.text());
 }
 
-const SUPADATA_URL = "https://api.supadata.ai/v1/youtube/transcript";
+const SUPADATA_URL = "https://api.supadata.ai/v1/transcript";
 
-// https://docs.supadata.ai: 200 with timed chunks (ms), or 206 when the video
-// has no transcript. Without lang=en it may answer in another language.
+// https://docs.supadata.ai: 200 with timed chunks (ms). mode=native only
+// returns the video's own captions (1 credit); the default would fall back
+// to AI transcription, billed per minute of video. Without lang=en it may
+// answer in another language.
 async function fromSupadata(videoId: string): Promise<Cue[] | null> {
-  const params = new URLSearchParams({ videoId, lang: "en" });
+  const params = new URLSearchParams({
+    url: `https://www.youtube.com/watch?v=${videoId}`,
+    lang: "en",
+    mode: "native",
+  });
   const res = await fetch(`${SUPADATA_URL}?${params}`, {
     headers: { "x-api-key": process.env.SUPADATA_API_KEY! },
     cache: "no-store",
   });
-  if (res.status === 206) return null;
+  // No captions to return.
+  if (res.status === 206 || res.status === 404) return null;
   if (!res.ok) throw new Error(`Supadata error ${res.status}`);
   const data: {
     lang: string;
