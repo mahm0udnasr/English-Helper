@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { YTPlayer } from "./VideoModal";
 
 type Cue = { start: number; end: number; text: string };
 type State =
   | { status: "loading" }
   | { status: "error" }
+  | { status: "limit" }
   | { status: "none" }
   | { status: "ready"; cues: Cue[] };
 
@@ -32,28 +33,43 @@ function cueAt(cues: Cue[], time: number) {
 // The video's English subtitles under the player. The current line is
 // highlighted and kept in view; tapping a line jumps the video there.
 // Render it with key={videoId} so a new video starts from a clean state.
+// onUnavailable runs when they can't be loaded (not when there are none).
 export default function Transcript({
   videoId,
   player,
+  onUnavailable,
 }: {
   videoId: string;
   player: YTPlayer | null;
+  onUnavailable: () => void;
 }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [active, setActive] = useState(-1);
   const listRef = useRef<HTMLOListElement>(null);
   const manualScrollAt = useRef(0);
+  const unavailable = useEffectEvent(onUnavailable);
 
   useEffect(() => {
     let cancelled = false;
     // ?v=2 skips "no subtitles" answers browsers cached before a fix.
     fetch(`/api/captions/${videoId}?v=2`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then(({ cues }: { cues: Cue[] | null }) => {
+      .then(async (res) => {
+        const body: { cues?: Cue[] | null; error?: string } = await res.json();
         if (cancelled) return;
-        setState(cues?.length ? { status: "ready", cues } : { status: "none" });
+        if (res.ok)
+          return setState(
+            body.cues?.length
+              ? { status: "ready", cues: body.cues }
+              : { status: "none" },
+          );
+        setState({ status: body.error === "limit" ? "limit" : "error" });
+        unavailable();
       })
-      .catch(() => !cancelled && setState({ status: "error" }));
+      .catch(() => {
+        if (cancelled) return;
+        setState({ status: "error" });
+        unavailable();
+      });
     return () => {
       cancelled = true;
     };
@@ -88,11 +104,16 @@ export default function Transcript({
   if (state.status !== "ready") {
     return (
       <p className="border-t border-border px-4 py-6 text-center text-sm text-muted">
-        {state.status === "loading"
-          ? "Loading subtitles…"
-          : state.status === "none"
-            ? "This video has no English subtitles."
-            : "Couldn't load subtitles."}
+        {
+          {
+            loading: "Loading subtitles…",
+            none: "This video has no English subtitles.",
+            limit:
+              "Subtitles here have reached this month's limit, so they're shown on the video instead.",
+            error:
+              "Couldn't load subtitles here, so they're shown on the video instead.",
+          }[state.status]
+        }
       </p>
     );
   }

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getEnglishCaptions } from "@/lib/captions";
+import { CaptionsLimitError, getEnglishCaptions } from "@/lib/captions";
 import { createClient } from "@/lib/supabase/server";
 
 // English subtitles for the video player: { cues } or { cues: null } when the
@@ -25,6 +25,8 @@ export async function GET(
     );
   } catch (e) {
     console.error(`Captions for ${videoId}:`, e);
+    if (e instanceof CaptionsLimitError)
+      return Response.json({ error: "limit" }, { status: 503 });
     return Response.json({ error: "Couldn't load subtitles" }, { status: 502 });
   }
 }

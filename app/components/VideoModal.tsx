@@ -17,8 +17,15 @@ export type YTPlayer = {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   playVideo(): void;
   destroy(): void;
-  // Undocumented, but the standard way to turn the player's captions off.
+  // Undocumented, but the standard way to turn the player's captions off
+  // and back on.
   unloadModule(name: "captions"): void;
+  loadModule(name: "captions"): void;
+  setOption(
+    module: "captions",
+    option: "track",
+    value: { languageCode: string },
+  ): void;
 };
 type YTNamespace = {
   Player: new (
@@ -37,6 +44,11 @@ declare global {
     YT?: YTNamespace;
     onYouTubeIframeAPIReady?: () => void;
   }
+}
+
+function showEnglishCaptions(player: YTPlayer) {
+  player.loadModule("captions");
+  player.setOption("captions", "track", { languageCode: "en" });
 }
 
 let apiPromise: Promise<YTNamespace> | undefined;
@@ -64,6 +76,9 @@ export default function VideoModal({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [player, setPlayer] = useState<YTPlayer | null>(null);
   const [showTranscript, setShowTranscript] = useState(true);
+  // Set when our transcript can't load: the player's own captions come back
+  // instead, since they load from the viewer's device, which YouTube allows.
+  const playerCaptionsOn = useRef(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -78,16 +93,20 @@ export default function VideoModal({
   useEffect(() => {
     let cancelled = false;
     let instance: YTPlayer | undefined;
+    const syncCaptions = () => {
+      if (playerCaptionsOn.current) showEnglishCaptions(instance!);
+      else instance!.unloadModule("captions");
+    };
     loadYouTubeApi().then((YT) => {
       if (cancelled || !iframeRef.current) return;
       instance = new YT.Player(iframeRef.current, {
         events: {
           onReady: () => {
-            instance!.unloadModule("captions");
+            syncCaptions();
             if (!cancelled) setPlayer(instance!);
           },
           onStateChange: (e) => {
-            if (e.data === PLAYING) instance!.unloadModule("captions");
+            if (e.data === PLAYING) syncCaptions();
           },
         },
       });
@@ -166,7 +185,15 @@ export default function VideoModal({
           </div>
         </div>
         {showTranscript && (
-          <Transcript key={videoId} videoId={videoId} player={player} />
+          <Transcript
+            key={videoId}
+            videoId={videoId}
+            player={player}
+            onUnavailable={() => {
+              playerCaptionsOn.current = true;
+              if (player) showEnglishCaptions(player);
+            }}
+          />
         )}
       </div>
     </div>

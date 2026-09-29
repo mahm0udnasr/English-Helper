@@ -4,6 +4,9 @@ import type { Database, Json } from "@/lib/database.types";
 
 export type Cue = { start: number; end: number; text: string }; // seconds
 
+// Supadata said no more credits this month (or a rate limit).
+export class CaptionsLimitError extends Error {}
+
 // English captions for a video, or null when it has none. Each video is
 // fetched once and saved in video_captions for everyone. YouTube is asked
 // directly first (free, and works from home connections); it refuses cloud
@@ -111,6 +114,8 @@ async function fromSupadata(videoId: string): Promise<Cue[] | null> {
   });
   // No captions to return.
   if (res.status === 206 || res.status === 404) return null;
+  if (res.status === 429 || res.status === 402)
+    throw new CaptionsLimitError(`Supadata limit reached (${res.status})`);
   if (!res.ok) throw new Error(`Supadata error ${res.status}`);
   const data: {
     lang: string;
