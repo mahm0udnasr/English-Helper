@@ -102,7 +102,7 @@ export default function Transcript({
       onWheel={markManualScroll}
       onTouchMove={markManualScroll}
       aria-label="Subtitles"
-      className="relative min-h-24 flex-1 overflow-y-auto overscroll-contain border-t border-border px-2 py-2 sm:h-48 sm:flex-none sm:shrink"
+      className="relative min-h-24 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] border-t border-border px-2 py-2 sm:h-48 sm:flex-none sm:shrink [&::-webkit-scrollbar]:hidden"
     >
       {state.cues.map((cue, i) => (
         <li key={i}>
@@ -115,10 +115,16 @@ export default function Transcript({
               setActive(i);
             }}
             aria-current={i === active ? "true" : undefined}
-            className={`w-full rounded-lg px-3 py-1.5 text-left transition-colors ${
+            className={`w-full rounded-lg px-3 py-1.5 text-left transition-[color,background-color,filter] ${
               i === active
                 ? "bg-accent/10 font-medium text-foreground"
                 : "text-muted hover:bg-foreground/5 hover:text-foreground"
+            } ${
+              // Soft blur on all but the lines around the current one, so
+              // the eye stays there; hovering a line brings it back.
+              active >= 0 && Math.abs(i - active) > 1
+                ? "blur-[1.5px] hover:blur-none"
+                : ""
             }`}
           >
             {cue.text}
