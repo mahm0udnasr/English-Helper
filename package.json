@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prefetch-captions": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/prefetch-captions.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
