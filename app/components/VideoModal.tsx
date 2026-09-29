@@ -17,13 +17,21 @@ export type YTPlayer = {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   playVideo(): void;
   destroy(): void;
+  // Undocumented, but the standard way to turn the player's captions off.
+  unloadModule(name: "captions"): void;
 };
 type YTNamespace = {
   Player: new (
     el: HTMLIFrameElement,
-    opts: { events: { onReady: () => void } },
+    opts: {
+      events: {
+        onReady: () => void;
+        onStateChange: (e: { data: number }) => void;
+      };
+    },
   ) => YTPlayer;
 };
+const PLAYING = 1;
 declare global {
   interface Window {
     YT?: YTNamespace;
@@ -64,13 +72,24 @@ export default function VideoModal({
   }, [onClose]);
 
   // Attach the API to the embed so the transcript can follow and seek it.
+  // The player's own captions are turned off since the transcript shows
+  // them; cc_load_policy=0 alone doesn't override the viewer's YouTube
+  // preference, and the captions module reloads when playback starts.
   useEffect(() => {
     let cancelled = false;
     let instance: YTPlayer | undefined;
     loadYouTubeApi().then((YT) => {
       if (cancelled || !iframeRef.current) return;
       instance = new YT.Player(iframeRef.current, {
-        events: { onReady: () => !cancelled && setPlayer(instance!) },
+        events: {
+          onReady: () => {
+            instance!.unloadModule("captions");
+            if (!cancelled) setPlayer(instance!);
+          },
+          onStateChange: (e) => {
+            if (e.data === PLAYING) instance!.unloadModule("captions");
+          },
+        },
       });
     });
     return () => {
@@ -96,7 +115,7 @@ export default function VideoModal({
         <div className="aspect-video shrink-0 bg-black">
           <iframe
             ref={iframeRef}
-            src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`}
+            src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1&cc_load_policy=0`}
             title={title}
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
