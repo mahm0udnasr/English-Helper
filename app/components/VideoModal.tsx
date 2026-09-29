@@ -98,6 +98,23 @@ export default function VideoModal({
     };
   }, [videoId]);
 
+  // Phones stay upright when the player goes fullscreen, so turn the screen
+  // sideways while it is. Android supports this; iOS and desktops don't have
+  // lock() (or reject it) and just keep their usual behavior.
+  useEffect(() => {
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (o: "landscape") => Promise<void>;
+    };
+    const onFullscreenChange = () => {
+      if (document.fullscreenElement === iframeRef.current)
+        orientation.lock?.("landscape").catch(() => {});
+      else orientation.unlock?.();
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
   return (
     <div
       role="dialog"
