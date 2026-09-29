@@ -30,6 +30,13 @@ export async function getEnglishCaptions(
   });
   if (!res.ok) throw new Error(`YouTube player error ${res.status}`);
   const data = await res.json();
+  // YouTube answers requests it doesn't trust (e.g. from cloud servers) with
+  // "LOGIN_REQUIRED" and no tracks; that's a failure, not "no captions".
+  const status = data.playabilityStatus?.status;
+  if (status !== "OK")
+    throw new Error(
+      `YouTube refused the player request: ${status} ${data.playabilityStatus?.reason ?? ""}`,
+    );
   const tracks: CaptionTrack[] =
     data.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
 

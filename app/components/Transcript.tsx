@@ -46,7 +46,8 @@ export default function Transcript({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/captions/${videoId}`)
+    // ?v=2 skips "no subtitles" answers browsers cached before a fix.
+    fetch(`/api/captions/${videoId}?v=2`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then(({ cues }: { cues: Cue[] | null }) => {
         if (cancelled) return;
