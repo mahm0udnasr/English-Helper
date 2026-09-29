@@ -102,7 +102,7 @@ export default function Transcript({
       onWheel={markManualScroll}
       onTouchMove={markManualScroll}
       aria-label="Subtitles"
-      className="relative h-40 min-h-24 shrink overflow-y-auto overscroll-contain border-t border-border px-2 py-2 sm:h-48"
+      className="relative min-h-24 flex-1 overflow-y-auto overscroll-contain border-t border-border px-2 py-2 sm:h-48 sm:flex-none sm:shrink"
     >
       {state.cues.map((cue, i) => (
         <li key={i}>

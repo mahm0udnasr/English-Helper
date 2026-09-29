@@ -85,11 +85,13 @@ export default function VideoModal({
       aria-modal="true"
       aria-label={title}
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm sm:p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl"
+        // Full screen on phones (clear of the notch and home bar); a centered
+        // card from sm up.
+        className="flex h-dvh w-full flex-col overflow-hidden bg-surface pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-2xl sm:border sm:border-border sm:py-0 sm:shadow-2xl"
       >
         <div className="aspect-video shrink-0 bg-black">
           <iframe
