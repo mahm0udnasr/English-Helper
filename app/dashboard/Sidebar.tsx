@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaLayerGroup, FaUsers, FaYoutube } from "react-icons/fa6";
+import { FaGear, FaLayerGroup, FaUsers, FaYoutube } from "react-icons/fa6";
 
 const links = [
   { href: "/dashboard/users", label: "Users", icon: FaUsers },
   { href: "/dashboard/categories", label: "Categories", icon: FaLayerGroup },
   { href: "/dashboard/channels", label: "Channels", icon: FaYoutube },
+  { href: "/dashboard/settings", label: "Settings", icon: FaGear },
 ] as const;
 
 // Vertical on tablets and up, a scrollable row on phones.
