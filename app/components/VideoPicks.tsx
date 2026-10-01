@@ -22,6 +22,8 @@ type Props = {
   done: boolean;
   // Extra videos already logged today.
   extras: ExtraVideo[];
+  // Whether the admin has our subtitles on (see VideoModal).
+  transcripts: boolean;
 };
 
 const totalMin = (videos: PickVideo[]) =>
@@ -43,6 +45,7 @@ export default function VideoPicks({
   goalMin,
   done,
   extras,
+  transcripts,
 }: Props) {
   const [playlist, setPlaylist] = useState(() => buildPlaylist(pool, goalMin));
   const [added, setAdded] = useState<PickVideo[]>([]);
@@ -178,6 +181,7 @@ export default function VideoPicks({
           videoId={playing.id}
           title={playing.title}
           subtitle={playing.channelTitle}
+          transcripts={transcripts}
           onClose={() => setPlaying(null)}
         />
       )}

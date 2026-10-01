@@ -12,6 +12,9 @@ type Props = {
   videoId: string;
   title: string;
   subtitle?: string;
+  // Off (set by the admin) leaves out our subtitles and their button; the
+  // player's own captions show instead.
+  transcripts: boolean;
   onClose: () => void;
 };
 
@@ -75,14 +78,16 @@ export default function VideoModal({
   videoId,
   title,
   subtitle,
+  transcripts,
   onClose,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [player, setPlayer] = useState<YTPlayer | null>(null);
   const [showTranscript, setShowTranscript] = useState(true);
-  // Set when our transcript can't load: the player's own captions come back
-  // instead, since they load from the viewer's device, which YouTube allows.
-  const playerCaptionsOn = useRef(false);
+  // Set when our transcript can't load (or is turned off): the player's own
+  // captions come back instead, since they load from the viewer's device,
+  // which YouTube allows.
+  const playerCaptionsOn = useRef(!transcripts);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -168,16 +173,20 @@ export default function VideoModal({
             {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
           </div>
           <div className="flex shrink-0 gap-2">
-            <button
-              type="button"
-              onClick={() => setShowTranscript((v) => !v)}
-              aria-pressed={showTranscript}
-              aria-label={showTranscript ? "Hide subtitles" : "Show subtitles"}
-              title={showTranscript ? "Hide subtitles" : "Show subtitles"}
-              className={`btn-ghost ${showTranscript ? "text-accent" : ""}`}
-            >
-              <FaClosedCaptioning />
-            </button>
+            {transcripts && (
+              <button
+                type="button"
+                onClick={() => setShowTranscript((v) => !v)}
+                aria-pressed={showTranscript}
+                aria-label={
+                  showTranscript ? "Hide subtitles" : "Show subtitles"
+                }
+                title={showTranscript ? "Hide subtitles" : "Show subtitles"}
+                className={`btn-ghost ${showTranscript ? "text-accent" : ""}`}
+              >
+                <FaClosedCaptioning />
+              </button>
+            )}
             {/* Picks up where the embed is, and closes it so the two don't
                 play over each other. */}
             <a
@@ -205,7 +214,7 @@ export default function VideoModal({
             </button>
           </div>
         </div>
-        {showTranscript && (
+        {transcripts && showTranscript && (
           <Transcript
             key={videoId}
             videoId={videoId}

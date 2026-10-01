@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ExtraVideo } from "@/app/actions/tasks";
+import { getAppSettings } from "@/lib/app-settings";
 import { getWatchChannels } from "@/lib/channels";
 import { shuffled } from "@/lib/playlist";
 import { createClient } from "@/lib/supabase/server";
@@ -51,7 +52,10 @@ export default async function HomeVideos({
     );
   }
 
-  const { channelCount, pool } = await getVideoPool(kind, showDefaults);
+  const [{ channelCount, pool }, appSettings] = await Promise.all([
+    getVideoPool(kind, showDefaults),
+    createClient().then(getAppSettings),
+  ]);
   if (channelCount === 0) {
     return (
       <p className="text-sm text-muted">
@@ -80,6 +84,7 @@ export default async function HomeVideos({
       goalMin={goalMin}
       done={done}
       extras={extras}
+      transcripts={appSettings.transcripts_enabled}
     />
   );
 }
