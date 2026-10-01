@@ -13,6 +13,24 @@ export type Database = {
   };
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          id: boolean;
+          transcripts_enabled: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          transcripts_enabled?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          transcripts_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: {
           created_at: string;

@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { getAppSettings } from "@/lib/app-settings";
 import { CaptionsLimitError, getEnglishCaptions } from "@/lib/captions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,8 +14,13 @@ export async function GET(
   if (!/^[\w-]{11}$/.test(videoId))
     return Response.json({ error: "Bad video id" }, { status: 400 });
 
+  const supabase = await createClient();
+  // Turned off by the admin: don't fetch (or spend Supadata credits).
+  if (!(await getAppSettings(supabase)).transcripts_enabled)
+    return Response.json({ error: "disabled" }, { status: 403 });
+
   try {
-    const cues = await getEnglishCaptions(await createClient(), videoId);
+    const cues = await getEnglishCaptions(supabase, videoId);
     return Response.json(
       { cues },
       {
