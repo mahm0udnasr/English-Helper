@@ -40,8 +40,8 @@ export default function CategoryPicker({
     });
 
   return (
-    <div className="flex flex-col gap-4">
-      <ul className="flex flex-wrap gap-2">
+    <div className="flex min-h-0 flex-col gap-4">
+      <ul className="flex min-h-0 flex-wrap gap-2 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((c) => {
           const on = selected.has(c.id);
           return (
@@ -50,7 +50,7 @@ export default function CategoryPicker({
                 type="button"
                 onClick={() => toggle(c.id)}
                 aria-pressed={on}
-                className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                className={`rounded-full border px-3 py-1 text-sm sm:px-4 sm:py-1.5 transition-colors ${
                   on
                     ? "border-accent bg-accent/10 font-medium text-accent"
                     : "border-border text-muted hover:text-foreground"
@@ -62,8 +62,8 @@ export default function CategoryPicker({
           );
         })}
       </ul>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      <div>
+      {error && <p className="shrink-0 text-sm text-red-500">{error}</p>}
+      <div className="shrink-0">
         <button
           type="button"
           onClick={save}
