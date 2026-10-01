@@ -33,22 +33,24 @@ export default function UpdateCategoriesButton({
       <dialog
         ref={dialogRef}
         aria-labelledby="categories-title"
-        className="card m-auto w-[calc(100%-2rem)] max-w-md text-foreground backdrop:bg-black/50"
+        // Fits the screen: only the chips scroll, with the heading and the
+        // button staying in view.
+        className="card m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md flex-col p-5 text-foreground backdrop:bg-black/50 open:flex sm:p-6"
       >
-        <div className="mb-1 flex items-start justify-between gap-4">
-          <h2 id="categories-title" className="text-xl font-semibold">
+        <div className="mb-1 flex shrink-0 items-start justify-between gap-4">
+          <h2 id="categories-title" className="text-lg font-semibold sm:text-xl">
             Categories
           </h2>
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
             aria-label="Close"
-            className="rounded-lg p-1 text-muted hover:text-foreground"
+            className="-m-1 rounded-lg p-2 text-muted hover:text-foreground"
           >
             <FaXmark />
           </button>
         </div>
-        <p className="mb-4 text-sm text-muted">
+        <p className="mb-4 shrink-0 text-sm text-muted">
           You get the recommended channels from the categories you pick.
         </p>
         <CategoryPicker
