@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { FaCheck } from "react-icons/fa6";
 import { saveCategories } from "@/app/actions/categories";
 
 export type Category = { id: string; name: string };
@@ -33,6 +32,12 @@ export default function CategoryPicker({
       return next;
     });
 
+  // Picked categories move to the front, each group keeping its usual order.
+  const ordered = [
+    ...categories.filter((c) => selected.has(c.id)),
+    ...categories.filter((c) => !selected.has(c.id)),
+  ];
+
   const save = () =>
     startTransition(async () => {
       const result = await saveCategories([...selected]);
@@ -43,7 +48,7 @@ export default function CategoryPicker({
   return (
     <div className="flex flex-col gap-4">
       <ul className="flex flex-wrap gap-2">
-        {categories.map((c) => {
+        {ordered.map((c) => {
           const on = selected.has(c.id);
           return (
             <li key={c.id}>
@@ -51,13 +56,12 @@ export default function CategoryPicker({
                 type="button"
                 onClick={() => toggle(c.id)}
                 aria-pressed={on}
-                className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
                   on
                     ? "border-accent bg-accent/10 font-medium text-accent"
                     : "border-border text-muted hover:text-foreground"
                 }`}
               >
-                {on && <FaCheck className="text-xs" />}
                 {c.name}
               </button>
             </li>
