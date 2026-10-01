@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FaClosedCaptioning, FaXmark } from "react-icons/fa6";
+import {
+  FaArrowUpRightFromSquare,
+  FaClosedCaptioning,
+  FaXmark,
+} from "react-icons/fa6";
 import Transcript from "./Transcript";
 
 type Props = {
@@ -174,6 +178,23 @@ export default function VideoModal({
             >
               <FaClosedCaptioning />
             </button>
+            {/* Picks up where the embed is, and closes it so the two don't
+                play over each other. */}
+            <a
+              href={`https://www.youtube.com/watch?v=${videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                const t = Math.floor(player?.getCurrentTime() ?? 0);
+                if (t > 0) e.currentTarget.href += `&t=${t}s`;
+                onClose();
+              }}
+              className="btn-ghost"
+              aria-label="Open on YouTube"
+              title="Open on YouTube"
+            >
+              <FaArrowUpRightFromSquare />
+            </a>
             <button
               type="button"
               onClick={onClose}
