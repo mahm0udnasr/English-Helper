@@ -32,12 +32,6 @@ export default function CategoryPicker({
       return next;
     });
 
-  // Picked categories move to the front, each group keeping its usual order.
-  const ordered = [
-    ...categories.filter((c) => selected.has(c.id)),
-    ...categories.filter((c) => !selected.has(c.id)),
-  ];
-
   const save = () =>
     startTransition(async () => {
       const result = await saveCategories([...selected]);
@@ -48,7 +42,7 @@ export default function CategoryPicker({
   return (
     <div className="flex flex-col gap-4">
       <ul className="flex flex-wrap gap-2">
-        {ordered.map((c) => {
+        {categories.map((c) => {
           const on = selected.has(c.id);
           return (
             <li key={c.id}>
