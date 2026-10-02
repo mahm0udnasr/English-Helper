@@ -71,6 +71,21 @@ export async function deleteDefaultChannel(id: string) {
   return {};
 }
 
+// Off hides the channel from every user without deleting it.
+export async function setDefaultChannelEnabled(id: string, on: boolean) {
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("default_channels")
+    .update({ enabled: on })
+    .eq("id", id)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!data.length) return { error: "Channel not found." };
+
+  revalidate();
+  return {};
+}
+
 // Re-fetch the channel's name/photo and drop its cached video list.
 export async function syncDefaultChannel(id: string) {
   const { supabase } = await requireAdmin();

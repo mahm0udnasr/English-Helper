@@ -7,17 +7,30 @@ import type { Tables } from "@/lib/database.types";
 import { requireAdmin } from "@/lib/supabase/server";
 import AddDefaultChannelForm from "./AddDefaultChannelForm";
 import DefaultChannelActions from "./DefaultChannelActions";
+import DefaultChannelSwitch from "./DefaultChannelSwitch";
 import ImportChannelsButton from "./ImportChannelsButton";
 
 export const metadata: Metadata = {
   title: "Default channels · English Helper",
 };
 
-function ChannelList({ channels }: { channels: Tables<"default_channels">[] }) {
+// Active channels get a switch to show or hide them for every user.
+function ChannelList({
+  channels,
+  withSwitch = false,
+}: {
+  channels: Tables<"default_channels">[];
+  withSwitch?: boolean;
+}) {
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
       {channels.map((c) => (
-        <li key={c.id} className="card flex items-center gap-4 p-4">
+        <li
+          key={c.id}
+          className={`card flex items-center gap-4 p-4 transition-opacity ${
+            withSwitch && !c.enabled ? "opacity-60" : ""
+          }`}
+        >
           <ChannelAvatar
             key={c.thumbnail_url}
             src={c.thumbnail_url}
@@ -31,6 +44,13 @@ function ChannelList({ channels }: { channels: Tables<"default_channels">[] }) {
           >
             {c.title}
           </a>
+          {withSwitch && (
+            <DefaultChannelSwitch
+              id={c.id}
+              title={c.title}
+              enabled={c.enabled}
+            />
+          )}
           <DefaultChannelActions id={c.id} title={c.title} />
         </li>
       ))}
@@ -76,7 +96,7 @@ function KindPanel({
           No default {kind} channels yet.
         </p>
       ) : kind === "active" ? (
-        <ChannelList channels={channels} />
+        <ChannelList channels={channels} withSwitch />
       ) : (
         <div className="flex flex-col gap-8">
           {categories.map((category) => {
@@ -123,6 +143,7 @@ export default async function DefaultChannelsPage() {
           <TabPanel param="kind" value="active" values={KINDS}>
             <p className="mt-1 text-sm text-muted">
               Every user gets these; they can hide ones they don&apos;t want.
+              Switch one off to hide it from everyone.
             </p>
           </TabPanel>
           <TabPanel param="kind" value="passive" values={KINDS}>
