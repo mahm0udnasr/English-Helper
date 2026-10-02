@@ -41,7 +41,8 @@ async function getVisibleDefaults(
     supabase
       .from("default_channels")
       .select("id, youtube_channel_id, title, category_id")
-      .eq("kind", kind),
+      .eq("kind", kind)
+      .eq("enabled", true),
     supabase.from("hidden_default_channels").select("default_channel_id"),
     kind === "passive"
       ? supabase.from("user_categories").select("category_id")

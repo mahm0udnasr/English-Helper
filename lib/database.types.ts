@@ -56,6 +56,7 @@ export type Database = {
         Row: {
           category_id: string | null;
           created_at: string;
+          enabled: boolean;
           id: string;
           kind: string;
           thumbnail_url: string | null;
@@ -65,6 +66,7 @@ export type Database = {
         Insert: {
           category_id?: string | null;
           created_at?: string;
+          enabled?: boolean;
           id?: string;
           kind: string;
           thumbnail_url?: string | null;
@@ -74,6 +76,7 @@ export type Database = {
         Update: {
           category_id?: string | null;
           created_at?: string;
+          enabled?: boolean;
           id?: string;
           kind?: string;
           thumbnail_url?: string | null;

@@ -150,6 +150,7 @@ export default async function ChannelsPage() {
     supabase
       .from("default_channels")
       .select("id, kind, title, thumbnail_url, youtube_channel_id, category_id")
+      .eq("enabled", true)
       .order("created_at"),
     supabase
       .from("hidden_default_channels")
