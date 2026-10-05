@@ -1,18 +1,20 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import type { ExtraVideo } from "@/app/actions/tasks";
 import { getAppSettings } from "@/lib/app-settings";
 import { getWatchChannels } from "@/lib/channels";
-import { shuffled } from "@/lib/playlist";
+import { seedCookie, seededShuffle } from "@/lib/playlist";
 import { createClient } from "@/lib/supabase/server";
 import { getLatestVideos } from "@/lib/youtube";
 import VideoPicks, { type PickVideo } from "./VideoPicks";
 
 // Pool of recent (≥ 4 min) videos from the user's channels of this kind
-// (their own plus the admin defaults), shuffled on every visit (the playlist
-// is built from it). getLatestVideos is cached, so this is cheap.
+// (their own plus the admin defaults), shuffled by `seed` (the playlist is
+// built from it). getLatestVideos is cached, so this is cheap.
 async function getVideoPool(
   kind: "active" | "passive",
   includeDefaults: boolean,
+  seed: string,
 ): Promise<{ channelCount: number; pool: PickVideo[] }> {
   const supabase = await createClient();
   const channels = await getWatchChannels(supabase, kind, includeDefaults);
@@ -27,7 +29,7 @@ async function getVideoPool(
   );
   return {
     channelCount: channels.length,
-    pool: shuffled(perChannel.flat()),
+    pool: seededShuffle(perChannel.flat(), seed),
   };
 }
 
@@ -37,12 +39,16 @@ export default async function HomeVideos({
   done,
   extras,
   showDefaults,
+  today,
+  userId,
 }: {
   kind: "active" | "passive";
   goalMin: number;
   done: boolean;
   extras: ExtraVideo[];
   showDefaults: boolean;
+  today: string;
+  userId: string;
 }) {
   if (!process.env.YOUTUBE_API_KEY) {
     return (
@@ -52,8 +58,12 @@ export default async function HomeVideos({
     );
   }
 
+  // Same playlist all day (and on every refresh) until the user shuffles.
+  const saved = (await cookies()).get(seedCookie(kind))?.value;
+  const seed = saved?.startsWith(`${today}.`) ? saved : `${today}.${userId}`;
+
   const [{ channelCount, pool }, appSettings] = await Promise.all([
-    getVideoPool(kind, showDefaults),
+    getVideoPool(kind, showDefaults, seed),
     createClient().then(getAppSettings),
   ]);
   if (channelCount === 0) {
@@ -82,6 +92,7 @@ export default async function HomeVideos({
       kind={kind}
       pool={pool}
       goalMin={goalMin}
+      today={today}
       done={done}
       extras={extras}
       transcripts={appSettings.transcripts_enabled}

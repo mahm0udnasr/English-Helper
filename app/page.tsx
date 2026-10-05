@@ -139,6 +139,8 @@ export default async function Home() {
               done={done.has("active")}
               extras={extrasFor("active")}
               showDefaults={settings.show_active_defaults}
+              today={today}
+              userId={user.id}
             />
           </Suspense>
         </TaskCard>
@@ -156,6 +158,8 @@ export default async function Home() {
               done={done.has("passive")}
               extras={extrasFor("passive")}
               showDefaults={settings.show_passive_defaults}
+              today={today}
+              userId={user.id}
             />
           </Suspense>
         </TaskCard>

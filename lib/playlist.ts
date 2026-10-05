@@ -9,6 +9,31 @@ export function shuffled<T>(items: T[]): T[] {
   return out;
 }
 
+// FNV-1a: a small, stable string hash.
+function hash(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+// A shuffle that's the same every time for the same seed, so the playlist
+// survives refreshes. Each video is ranked on its own, so a new upload only
+// slots in instead of reordering everything.
+export function seededShuffle<T extends { id: string }>(
+  items: T[],
+  seed: string,
+): T[] {
+  const rank = new Map(items.map((v) => [v.id, hash(`${seed}:${v.id}`)]));
+  return [...items].sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+}
+
+// Cookie holding the seed of the last Shuffle, per kind. Its value starts
+// with the day it was made so a new day gets a fresh playlist.
+export const seedCookie = (kind: string) => `playlist-seed-${kind}`;
+
 // Minutes credited for watching a video (rounded, at least 1).
 export const videoMinutes = (v: Timed) =>
   Math.max(1, Math.round(v.durationSec / 60));

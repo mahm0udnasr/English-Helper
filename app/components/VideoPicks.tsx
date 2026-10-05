@@ -8,7 +8,13 @@ import {
   type ExtraVideo,
 } from "@/app/actions/tasks";
 import { formatDuration } from "@/lib/format";
-import { buildPlaylist, shuffled, videoMinutes } from "@/lib/playlist";
+import {
+  buildPlaylist,
+  seedCookie,
+  seededShuffle,
+  shuffled,
+  videoMinutes,
+} from "@/lib/playlist";
 import type { YouTubeVideo } from "@/lib/youtube";
 import VideoModal from "./VideoModal";
 
@@ -19,6 +25,8 @@ type Props = {
   // Already shuffled on the server, so the first render matches on the client.
   pool: PickVideo[];
   goalMin: number;
+  // The user's today (YYYY-MM-DD), to stamp the shuffle seed with.
+  today: string;
   done: boolean;
   // Extra videos already logged today.
   extras: ExtraVideo[];
@@ -43,6 +51,7 @@ export default function VideoPicks({
   kind,
   pool,
   goalMin,
+  today,
   done,
   extras,
   transcripts,
@@ -67,8 +76,11 @@ export default function VideoPicks({
   ]);
   const candidates = pool.filter((v) => !used.has(v.id));
 
+  // New seed, saved in a cookie so the server keeps this playlist on refresh.
   function reshuffle() {
-    setPlaylist(buildPlaylist(shuffled(pool), goalMin));
+    const seed = `${today}.${Math.random().toString(36).slice(2)}`;
+    document.cookie = `${seedCookie(kind)}=${seed}; path=/; max-age=${60 * 60 * 48}; samesite=lax`;
+    setPlaylist(buildPlaylist(seededShuffle(pool, seed), goalMin));
   }
 
   function addVideo() {
